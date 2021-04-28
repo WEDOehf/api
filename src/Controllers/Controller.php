@@ -1,0 +1,259 @@
+<?php declare(strict_types = 1);
+
+namespace Wedo\Api\Controllers;
+
+use Nette\Application\AbortException;
+use Nette\Application\Request;
+use Nette\Application\Response;
+use Nette\Application\Responses\JsonResponse;
+use Nette\Application\UI\Presenter;
+use Nette\Localization\Translator;
+use Nette\Reflection\Annotation;
+use Nette\Utils\Json;
+use Nette\Utils\Strings;
+use Psr\Log\LoggerInterface;
+use ReflectionClass;
+use ReflectionMethod;
+use ReflectionNamedType;
+use ReflectionParameter;
+use Throwable;
+use Wedo\Api\Exceptions\BadRequestException;
+use Wedo\Api\Exceptions\NotFoundException;
+use Wedo\Api\Exceptions\ResponseException;
+use Wedo\Api\Exceptions\ValidationException;
+use Wedo\Api\Helpers\AnnotationHelper;
+use Wedo\Api\Requests\BaseRequest;
+use Wedo\Api\Responses\BaseResponse;
+use Wedo\Api\Responses\ErrorResponse;
+use Wedo\Api\Responses\ValidationErrorResponse;
+use Wedo\Utilities\Json\JsonDateTime;
+use Wedo\Utilities\Json\JsonObject;
+use Wedo\Utilities\Json\JsonTranslatableMessage;
+
+/**
+ * @codeCoverageIgnore To hard to test ATM and this class is not likely to change
+ */
+class Controller extends Presenter
+{
+
+	/** @var mixed */
+	public $payload = [];
+
+	protected LoggerInterface $logger;
+
+	public Request $request;
+
+	protected Translator $translator;
+
+	/**
+	 * @return JsonResponse
+	 */
+	public function run(Request $request): Response
+	{
+		$this->request = $request;
+		$this->setParent($this->getParent(), $request->getPresenterName());
+		if ($this->getHttpRequest()->getHeader('origin') !== null) {
+			$this->getHttpResponse()->addHeader('Access-Control-Allow-Origin', $this->getHttpRequest()->getHeader('origin'));
+		}
+
+		if (Strings::upper($this->request->getMethod() ?? '') === 'OPTIONS') {
+			$this->setOptionsRequestHeaders();
+
+			return new JsonResponse([]);
+		}
+
+		try {
+			$result = $this->process();
+		} catch (AbortException $ex) {
+			//all ok, abort exception shouldn't be thrown to user
+		}
+
+		$result = $result ?? $this->payload;
+
+		$this->setTranslatorOnJsonTranslatable($result);
+
+		return new JsonResponse($result ?? $this->payload);
+	}
+
+
+	/**
+	 * @param mixed[] $params
+	 * @throws NotFoundException
+	 */
+	protected function tryCall(string $method, array $params): bool
+	{
+		if (!method_exists($this, $method)) {
+			throw new NotFoundException();
+		}
+
+		$rm = new ReflectionMethod($this, $method);
+		$this->validateRequest($rm);
+		$methodParams = $rm->getParameters();
+
+		if (count($methodParams) > 0) {
+			$params = $this->createParams($params, $methodParams);
+		} else {
+			$params = [];
+		}
+
+		$this->payload = $rm->invokeArgs($this, $params);
+
+		return true;
+	}
+
+
+	/**
+	 * @throws BadRequestException
+	 */
+	protected function validateRequest(ReflectionMethod $rm): void
+	{
+		/** @var Annotation $expectedMethod */
+		$expectedMethod = AnnotationHelper::getAnnotation($rm, 'httpMethod');
+		$expectedMethod = strtoupper((string) $expectedMethod);
+
+		if ($expectedMethod === '') {
+			$expectedMethod = 'get';
+			$params = $rm->getParameters();
+			/** @phpstan-ignore-next-line */
+			if (!empty($params)) {
+				/** @var ReflectionNamedType|null $paramClass */
+				$paramClass = $params[0]->getType();
+
+				if ($paramClass !== null) {
+					$paramClassName = $paramClass->getName();
+					if (class_exists($paramClassName) && (new ReflectionClass($paramClassName))->isSubclassOf(BaseRequest::class))
+					$expectedMethod = 'post';
+				}
+			}
+		}
+
+		$request = $this->getHttpRequest();
+
+		if (strcasecmp($this->getHttpRequest()->getMethod(), $expectedMethod) !== 0) {
+			throw new BadRequestException(
+				'Action requires ' . $expectedMethod . ' http method but received ' . $request->getMethod()
+			);
+		}
+	}
+
+
+	/**
+	 * @param mixed[] $params
+	 * @param ReflectionParameter[] $methodParams
+	 * @return mixed[]
+	 */
+	protected function createParams(array $params, array $methodParams): array
+	{
+		foreach ($methodParams as $key => $methodParam) {
+			/** @var ReflectionNamedType|null $classType */
+			$classType = $methodParam->getType();
+
+			if ($classType === null || !class_exists($classType->getName())) {
+				continue;
+			}
+
+			$reflectionClass = new ReflectionClass($classType->getName());
+
+			if ($reflectionClass->isSubclassOf(BaseRequest::class)) {
+				$post = $this->getHttpRequest()->getRawBody();
+
+				if ($post === null || $post === '') {
+					throw new BadRequestException('Request is empty!');
+				}
+
+				$params[$key] = $reflectionClass->newInstance();
+				$inputData = Json::decode($post, Json::FORCE_ARRAY);
+				$params[$key]->buildForm($inputData);
+				$params[$key]->validate();
+
+				break;
+			}
+
+			if ($reflectionClass->getName() === JsonDateTime::class) {
+				$params[$key] = new JsonDateTime($this->getHttpRequest()->getQuery($key));
+			}
+		}
+
+		return $params;
+	}
+
+
+	protected function process(): ?BaseResponse
+	{
+		try {
+			$this->beforeProcess();
+			$params = $this->request->getParameters();
+			$action = $params['action'];
+			unset($params['action']);
+			$this->tryCall($action, $params);
+
+			return null;
+		} catch (ResponseException $responseException) {
+			$this->getHttpResponse()->setCode($responseException->getCode());
+
+			$result = $responseException instanceof ValidationException
+				? new ValidationErrorResponse($responseException)
+				: new ErrorResponse($responseException);
+		} catch (Throwable $ex) {
+			$this->logger->error($ex->getMessage(), ['exception' => $ex]);
+			$this->getHttpResponse()->setCode(500);
+			$result = new ErrorResponse(new ResponseException($ex->getMessage()));
+		}
+
+		return $result;
+	}
+
+
+	protected function beforeProcess(): void
+	{
+	}
+
+
+	protected function setOptionsRequestHeaders(): void
+	{
+		$this->getHttpResponse()->addHeader('Access-Control-Allow-Headers', 'api-key, accept, Content-Type, session-id');
+		$this->getHttpResponse()->addHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+		$this->getHttpResponse()->addHeader('Access-Control-Allow-Credentials', 'true');
+		$this->getHttpResponse()->setCode(200);
+	}
+
+
+	/**
+	 * @param BaseResponse|JsonObject|mixed[] $data
+	 */
+	private function setTranslatorOnJsonTranslatable(&$data): void
+	{
+		if (is_array($data)) {
+			foreach ($data as $key => $value) {
+				if ($value instanceof JsonTranslatableMessage) {
+					$value->setTranslator($this->translator);
+				}
+
+				if ($value instanceof JsonObject) {
+					$this->setTranslatorOnJsonTranslatable($value);
+				}
+			}
+
+			return;
+		}
+
+		$properties = get_object_vars($data);
+
+		foreach ($properties as $property) {
+			if ($property instanceof JsonObject || is_array($property)) {
+				$this->setTranslatorOnJsonTranslatable($property);
+			}
+
+			if ($property instanceof JsonTranslatableMessage) {
+				$property->setTranslator($this->translator);
+			}
+		}
+	}
+
+	public function injectTranslator(Translator $translator): void
+	{
+		$translator = clone $translator;
+		$this->translator = $translator;
+	}
+
+}

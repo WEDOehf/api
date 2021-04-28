@@ -1,0 +1,13 @@
+parameters:
+	scanDirectories:
+		- src
+	treatPhpDocTypesAsCertain: false
+	ignoreErrors:
+		-
+			message: '#Variable property access on \$this\(Wedo\\Api\\Requests\\BaseRequest\)\.#'
+			path: src/Requests/BaseRequest
+includes:
+	- vendor/phpstan/phpstan-nette/extension.neon
+	- vendor/phpstan/phpstan-nette/rules.neon
+	- vendor/phpstan/phpstan-dibi/extension.neon
+	- vendor/phpstan/phpstan-strict-rules/rules.neon
