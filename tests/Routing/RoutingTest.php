@@ -42,13 +42,11 @@ class RoutingTest extends TestCase
 		$this->assertNull($route->match($this->createRequest('/api/v1/route1/not-exist')));
 	}
 
-
 	public function testMatchNotApiUrl(): void
 	{
 		$route = new ApiRoute('/api/v1', 'Api', []);
 		$this->assertNull($route->match($this->createRequest('/api/v')));
 	}
-
 
 	public function testConstruct(): void
 	{
@@ -56,10 +54,10 @@ class RoutingTest extends TestCase
 		$this->assertNull($route->constructUrl(['presenter' => 'Api:Default'], new UrlScript('http://domain.local')));
 	}
 
-
 	private function createRequest(string $path): Request
 	{
 		$url = new UrlScript('http://domain.local' . $path);
+
 		return new Request($url);
 	}
 

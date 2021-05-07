@@ -42,7 +42,6 @@ abstract class BaseRequest
 		$this->formBuilder = $formBuilder ?? new FormBuilder();
 	}
 
-
 	/**
 	 * @param mixed[] $data
 	 * @param Container $form ($this->form by default)
@@ -59,7 +58,6 @@ abstract class BaseRequest
 
 		$request->setValues($data);
 	}
-
 
 	/**
 	 * Read annotations from public properties in current class
@@ -78,7 +76,6 @@ abstract class BaseRequest
 
 		return $annotations ?? null;
 	}
-
 
 	/**
 	 * @internal
@@ -112,7 +109,7 @@ abstract class BaseRequest
 			case 'items':
 				if (!$control instanceof ChoiceControl) {
 					throw new NotSupportedException('Items annotation cannot be set on on control type "'
-						. get_class($control) . '" in ' . static::class);
+						. $control::class . '" in ' . static::class);
 				}
 
 				$this->setItems($control, $args);
@@ -137,7 +134,6 @@ abstract class BaseRequest
 		$this->form->setValues($this->valuesToString($values));
 		$this->fillFromForm();
 	}
-
 
 	/**
 	 * @return array<string, mixed>
@@ -166,7 +162,6 @@ abstract class BaseRequest
 		return $arr;
 	}
 
-
 	/**
 	 * @param mixed[] $values
 	 * @return string[][]
@@ -185,7 +180,6 @@ abstract class BaseRequest
 
 		return $values;
 	}
-
 
 	/**
 	 * @internal
@@ -209,7 +203,6 @@ abstract class BaseRequest
 		}
 	}
 
-
 	/**
 	 * @internal
 	 */
@@ -217,7 +210,6 @@ abstract class BaseRequest
 	{
 		return $this->form->isValid();
 	}
-
 
 	/**
 	 * @throws ValidationException
@@ -236,7 +228,6 @@ abstract class BaseRequest
 
 		throw new ValidationException($errors);
 	}
-
 
 	/**
 	 * Returns array in control => error way
@@ -280,49 +271,26 @@ abstract class BaseRequest
 		return $errors;
 	}
 
-
-	/**
-	 * @param mixed[] $args
-	 */
-	private function addRule(BaseControl $control, array $args): void
-	{
-		foreach ($args as $arg) {
-			if ($arg instanceof ArrayHash) {
-				$addRuleArgs = (array) $arg;
-				array_unshift($addRuleArgs, constant(Form::class . '::' . strtoupper(array_shift($addRuleArgs))));
-			} else {
-				$addRuleArgs = [constant(Form::class . '::' . strtoupper($arg))];
-			}
-
-			call_user_func_array([$control, 'addRule'], $addRuleArgs);
-		}
-	}
-
-
-	/**
-	 * @param mixed[] $args
-	 */
-	private function addCustomRule(BaseControl $control, array $args): void
-	{
-		foreach ($args as $arg) {
-			$addRuleArgs = $arg instanceof ArrayHash ? (array) $arg : $arg;
-			call_user_func_array([$control, 'addRule'], $addRuleArgs);
-		}
-	}
-
-
-	/**
-	 * @param mixed[] $args
-	 */
-	private function addRequiredRule(BaseControl $control, array $args): void
-	{
-		call_user_func_array([$control->getRules(), 'setRequired'], $args);
-	}
-
-
 	public function getForm(): Container
 	{
 		return $this->form;
+	}
+
+	/**
+	 * @return ReflectionProperty[]
+	 */
+	public function getReflectionProperties(): array
+	{
+		if (!isset($this->reflectionProperties)) {
+			$properties = (new ReflectionObject($this))->getProperties(ReflectionProperty::IS_PUBLIC);
+			$this->reflectionProperties = [];
+
+			foreach ($properties as $property) {
+				$this->reflectionProperties[$property->getName()] = $property;
+			}
+		}
+
+		return $this->reflectionProperties;
 	}
 
 	protected function setForm(?Container $form = null): Container
@@ -342,6 +310,41 @@ abstract class BaseRequest
 		return $form;
 	}
 
+	/**
+	 * @param mixed[] $args
+	 */
+	private function addRule(BaseControl $control, array $args): void
+	{
+		foreach ($args as $arg) {
+			if ($arg instanceof ArrayHash) {
+				$addRuleArgs = (array) $arg;
+				array_unshift($addRuleArgs, constant(Form::class . '::' . strtoupper(array_shift($addRuleArgs))));
+			} else {
+				$addRuleArgs = [constant(Form::class . '::' . strtoupper($arg))];
+			}
+
+			call_user_func_array([$control, 'addRule'], $addRuleArgs);
+		}
+	}
+
+	/**
+	 * @param mixed[] $args
+	 */
+	private function addCustomRule(BaseControl $control, array $args): void
+	{
+		foreach ($args as $arg) {
+			$addRuleArgs = $arg instanceof ArrayHash ? (array) $arg : $arg;
+			call_user_func_array([$control, 'addRule'], $addRuleArgs);
+		}
+	}
+
+	/**
+	 * @param mixed[] $args
+	 */
+	private function addRequiredRule(BaseControl $control, array $args): void
+	{
+		call_user_func_array([$control->getRules(), 'setRequired'], $args);
+	}
 
 	/**
 	 * @param mixed[] $args
@@ -355,24 +358,6 @@ abstract class BaseRequest
 		} else {
 			throw new NotSupportedException('Only Json is allowed for setting items on select in request!');
 		}
-	}
-
-
-	/**
-	 * @return ReflectionProperty[]
-	 */
-	public function getReflectionProperties(): array
-	{
-		if (!isset($this->reflectionProperties)) {
-			$properties = (new ReflectionObject($this))->getProperties(ReflectionProperty::IS_PUBLIC);
-			$this->reflectionProperties = [];
-
-			foreach ($properties as $property) {
-				$this->reflectionProperties[$property->getName()] = $property;
-			}
-		}
-
-		return $this->reflectionProperties;
 	}
 
 }

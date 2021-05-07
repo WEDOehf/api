@@ -15,15 +15,12 @@ class ResponseException extends Exception
 	/** @var ResponseException[] */
 	protected array $additionalExceptions = [];
 
-	/**
-	 * @param mixed|string ...$parameters
-	 */
-	public function __construct(string $message = '', int $code = 500, ?Throwable $previous = null, ...$parameters)
+	public function __construct(string $message = '', int $code = 500, ?Throwable $previous = null, mixed ...$parameters)
 	{
 		$this->parameters = $parameters;
+
 		parent::__construct($message, $code, $previous);
 	}
-
 
 	public function getTranslatedMessage(ITranslator $translator): string
 	{
@@ -51,7 +48,6 @@ class ResponseException extends Exception
 	{
 		return [...[$this], ...$this->getAdditionalExceptions()];
 	}
-
 
 	/**
 	 * @return string[]

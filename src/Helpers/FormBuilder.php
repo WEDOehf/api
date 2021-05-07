@@ -65,6 +65,11 @@ class FormBuilder
 		}
 	}
 
+	public function createEmptyForm(): Form
+	{
+		return new Form();
+	}
+
 	/**
 	 * @param string[][] $annotations
 	 * @throws ArgumentOutOfRangeException
@@ -77,11 +82,6 @@ class FormBuilder
 		}
 
 		return $annotations['control'][0];
-	}
-
-	public function createEmptyForm(): Form
-	{
-		return new Form();
 	}
 
 }

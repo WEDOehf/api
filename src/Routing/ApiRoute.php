@@ -28,7 +28,6 @@ class ApiRoute implements Router
 		$this->apiEndPoints = $apiEndpoints;
 	}
 
-
 	/**
 	 * @return mixed[]|null
 	 */
@@ -62,7 +61,6 @@ class ApiRoute implements Router
 		return $params;
 	}
 
-
 	/**
 	 * Constructs absolute URL from Request object. Not implemented for API, since its not needed
 	 *
@@ -72,7 +70,6 @@ class ApiRoute implements Router
 	{
 		return null;
 	}
-
 
 	/**
 	 * @param mixed[] $paramsPart

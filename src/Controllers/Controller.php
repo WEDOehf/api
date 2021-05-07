@@ -35,12 +35,11 @@ use Wedo\Utilities\Json\JsonTranslatableMessage;
 class Controller extends Presenter
 {
 
-	/** @var mixed */
-	public $payload = [];
-
-	protected LoggerInterface $logger;
+	public mixed $payload = [];
 
 	public Request $request;
+
+	protected LoggerInterface $logger;
 
 	protected Translator $translator;
 
@@ -67,13 +66,18 @@ class Controller extends Presenter
 			//all ok, abort exception shouldn't be thrown to user
 		}
 
-		$result = $result ?? $this->payload;
+		$result ??= $this->payload;
 
 		$this->setTranslatorOnJsonTranslatable($result);
 
 		return new JsonResponse($result ?? $this->payload);
 	}
 
+	public function injectTranslator(Translator $translator): void
+	{
+		$translator = clone $translator;
+		$this->translator = $translator;
+	}
 
 	/**
 	 * @param mixed[] $params
@@ -89,17 +93,12 @@ class Controller extends Presenter
 		$this->validateRequest($rm);
 		$methodParams = $rm->getParameters();
 
-		if (count($methodParams) > 0) {
-			$params = $this->createParams($params, $methodParams);
-		} else {
-			$params = [];
-		}
+		$params = count($methodParams) > 0 ? $this->createParams($params, $methodParams) : [];
 
 		$this->payload = $rm->invokeArgs($this, $params);
 
 		return true;
 	}
-
 
 	/**
 	 * @throws BadRequestException
@@ -116,7 +115,6 @@ class Controller extends Presenter
 			);
 		}
 	}
-
 
 	/**
 	 * @param mixed[] $params
@@ -158,7 +156,6 @@ class Controller extends Presenter
 		return $params;
 	}
 
-
 	protected function process(): ?BaseResponse
 	{
 		try {
@@ -184,11 +181,10 @@ class Controller extends Presenter
 		return $result;
 	}
 
-
 	protected function beforeProcess(): void
 	{
+		//override if needed
 	}
-
 
 	protected function setOptionsRequestHeaders(): void
 	{
@@ -198,11 +194,10 @@ class Controller extends Presenter
 		$this->getHttpResponse()->setCode(200);
 	}
 
-
 	/**
 	 * @param BaseResponse|JsonObject|mixed[] $data
 	 */
-	private function setTranslatorOnJsonTranslatable(&$data): void
+	private function setTranslatorOnJsonTranslatable(mixed $data): void
 	{
 		if (is_array($data)) {
 			foreach ($data as $key => $value) {
@@ -231,23 +226,15 @@ class Controller extends Presenter
 		}
 	}
 
-	public function injectTranslator(Translator $translator): void
-	{
-		$translator = clone $translator;
-		$this->translator = $translator;
-	}
-
-
 	private function getExpectedHttpMethod(ReflectionMethod $rm): string
 	{
-		$attributes = $rm->getAttributes('HttpMethod');
+		$attributes = $rm->getAttributes(HttpMethod::class);
 
 		if (count($attributes) > 0) {
 			/** @var HttpMethod $httpMethod */
 			$httpMethod = $attributes[0]->newInstance();
+
 			return Strings::upper($httpMethod->value);
-
-
 		}
 
 		$params = $rm->getParameters();
@@ -259,7 +246,7 @@ class Controller extends Presenter
 		/** @var ReflectionNamedType|null $paramClass */
 		$paramClass = $params[0]->getType();
 
-		if ($paramClass === NULL) {
+		if ($paramClass === null) {
 			return 'GET';
 		}
 

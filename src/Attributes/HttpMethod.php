@@ -2,6 +2,8 @@
 
 namespace Wedo\Api\Attributes;
 
+use Attribute;
+
 #[Attribute]
 class HttpMethod
 {
@@ -12,4 +14,5 @@ class HttpMethod
 	{
 		$this->value = $value;
 	}
+
 }

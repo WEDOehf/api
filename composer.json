@@ -3,7 +3,7 @@
   "description": "rest api",
   "license": ["MIT"],
   "require": {
-    "php": "^7.4 || ^8.0",
+    "php": "^8.0",
     "psr/log": "^1.1",
     "nette/di": "^3.0",
     "nette/application": "^3.0",
@@ -18,7 +18,7 @@
     "phpstan/phpstan-dibi": "^0.12",
     "phpstan/phpstan-nette": "^0.12",
     "phpstan/phpstan-strict-rules": "^0.12",
-    "ninjify/qa": "^0.12"
+    "contributte/qa": "^0.1"
   },
   "autoload": {
     "psr-4": {

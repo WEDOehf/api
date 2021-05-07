@@ -52,7 +52,6 @@ class RequestTest extends TestCase
 		$request->buildForm();
 	}
 
-
 	public function testSetRequiredFalse(): void
 	{
 		$request = new RequiredFalseRequest();
@@ -88,7 +87,6 @@ class RequestTest extends TestCase
 		$request = new TestNotBuiltInTypeRequest();
 		$request->buildForm();
 	}
-
 
 	public function testArrayRequest_WithValidData_ReturnsTrue(): void
 	{
@@ -129,7 +127,6 @@ class RequestTest extends TestCase
 
 		$this->assertEquals($data, $request->toArray());
 	}
-
 
 	public function testContainer_WithValidJson(): void
 	{

@@ -16,9 +16,9 @@ class ValidationException extends ResponseException
 	public function __construct(array $validationErrors)
 	{
 		parent::__construct('Data is not Valid!', 422);
+
 		$this->validationErrors = $validationErrors;
 	}
-
 
 	/**
 	 * @return ValidationError[]
@@ -28,7 +28,6 @@ class ValidationException extends ResponseException
 	{
 		return $this->validationErrors;
 	}
-
 
 	/**
 	 * @param ValidationError[] $validationErrors
