@@ -8,7 +8,6 @@ use Nette\Application\Response;
 use Nette\Application\Responses\JsonResponse;
 use Nette\Application\UI\Presenter;
 use Nette\Localization\Translator;
-use Nette\Reflection\Annotation;
 use Nette\Utils\Json;
 use Nette\Utils\Strings;
 use Psr\Log\LoggerInterface;
@@ -17,11 +16,11 @@ use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionParameter;
 use Throwable;
+use Wedo\Api\Attributes\HttpMethod;
 use Wedo\Api\Exceptions\BadRequestException;
 use Wedo\Api\Exceptions\NotFoundException;
 use Wedo\Api\Exceptions\ResponseException;
 use Wedo\Api\Exceptions\ValidationException;
-use Wedo\Api\Helpers\AnnotationHelper;
 use Wedo\Api\Requests\BaseRequest;
 use Wedo\Api\Responses\BaseResponse;
 use Wedo\Api\Responses\ErrorResponse;
@@ -107,25 +106,7 @@ class Controller extends Presenter
 	 */
 	protected function validateRequest(ReflectionMethod $rm): void
 	{
-		/** @var Annotation $expectedMethod */
-		$expectedMethod = AnnotationHelper::getAnnotation($rm, 'httpMethod');
-		$expectedMethod = strtoupper((string) $expectedMethod);
-
-		if ($expectedMethod === '') {
-			$expectedMethod = 'get';
-			$params = $rm->getParameters();
-			/** @phpstan-ignore-next-line */
-			if (!empty($params)) {
-				/** @var ReflectionNamedType|null $paramClass */
-				$paramClass = $params[0]->getType();
-
-				if ($paramClass !== null) {
-					$paramClassName = $paramClass->getName();
-					if (class_exists($paramClassName) && (new ReflectionClass($paramClassName))->isSubclassOf(BaseRequest::class))
-					$expectedMethod = 'post';
-				}
-			}
-		}
+		$expectedMethod = $this->getExpectedHttpMethod($rm);
 
 		$request = $this->getHttpRequest();
 
@@ -254,6 +235,40 @@ class Controller extends Presenter
 	{
 		$translator = clone $translator;
 		$this->translator = $translator;
+	}
+
+
+	private function getExpectedHttpMethod(ReflectionMethod $rm): string
+	{
+		$attributes = $rm->getAttributes('HttpMethod');
+
+		if (count($attributes) > 0) {
+			/** @var HttpMethod $httpMethod */
+			$httpMethod = $attributes[0]->newInstance();
+			return Strings::upper($httpMethod->value);
+
+
+		}
+
+		$params = $rm->getParameters();
+
+		if (count($params) === 0) {
+			return 'GET';
+		}
+
+		/** @var ReflectionNamedType|null $paramClass */
+		$paramClass = $params[0]->getType();
+
+		if ($paramClass === NULL) {
+			return 'GET';
+		}
+
+		$paramClassName = $paramClass->getName();
+		if (class_exists($paramClassName) && (new ReflectionClass($paramClassName))->isSubclassOf(BaseRequest::class)) {
+			return 'POST';
+		}
+
+		return 'GET';
 	}
 
 }
