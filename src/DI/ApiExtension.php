@@ -5,10 +5,10 @@ namespace Wedo\Api\DI;
 use Nette\Application\Routers\Route;
 use Nette\DI\CompilerExtension;
 use Nette\DI\Definitions\ServiceDefinition;
-use Nette\Reflection\AnnotationsParser;
 use Nette\Utils\Strings;
 use ReflectionClass;
 use ReflectionMethod;
+use Wedo\Api\Attributes\Internal;
 use Wedo\Api\Routing\RouterFactory;
 
 /**
@@ -58,7 +58,7 @@ class ApiExtension extends CompilerExtension
 
 			foreach ($publicMethods as $oneMethod) {
 				if ($oneMethod->isConstructor() ||
-					isset(AnnotationsParser::getAll($oneMethod)['internal']) ||
+					count($oneMethod->getAttributes(Internal::class)) > 0 ||
 					$oneMethod->getDeclaringClass()->getName() !== $obj->getName()) {
 					continue;
 				}

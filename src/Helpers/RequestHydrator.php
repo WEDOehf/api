@@ -9,11 +9,7 @@ use ReflectionNamedType;
 class RequestHydrator
 {
 
-	/**
-	 * @param mixed|string $value
-	 * @return string|int|float|bool|DateTimeImmutable|null
-	 */
-	public static function hydrateValue(ReflectionNamedType $type, $value)
+	public static function hydrateValue(ReflectionNamedType $type, mixed $value): string|int|float|bool|DateTimeImmutable|null
 	{
 		if (!$type->isBuiltin() && $type->getName() !== 'DateTimeInterface') {
 			throw new InvalidArgumentException('Only built in types are supported! ' . $type->getName() . ' is not supported');
@@ -22,11 +18,7 @@ class RequestHydrator
 		return self::castValueToBuiltInType($value, $type->getName(), $type->allowsNull());
 	}
 
-	/**
-	 * @param mixed $value
-	 * @return int|float|string|bool|DateTimeImmutable|null
-	 */
-	public static function castValueToBuiltInType($value, string $type, bool $allowsNull)
+	public static function castValueToBuiltInType(mixed $value, string $type, bool $allowsNull): int|float|string|bool|DateTimeImmutable|null
 	{
 		switch ($type) {
 			case 'int':

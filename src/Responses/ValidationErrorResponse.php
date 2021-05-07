@@ -19,6 +19,7 @@ class ValidationErrorResponse extends ErrorResponse
 	public function __construct(ValidationException $exception)
 	{
 		parent::__construct($exception);
+
 		$this->validation_errors = $exception->getValidationErrors();
 	}
 
