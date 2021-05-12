@@ -62,21 +62,14 @@ class RequestTest extends TestCase
 
 	public function testNonExistingRule(): void
 	{
-		$this->expectExceptionMessage('Cannot apply rule "addBlaSomething"!');
+		$this->expectExceptionMessage('Unknown validator \'BlaSomething\' for control \'name\'.');
 		$request = new TestNonExistingRuleRequest();
-		$request->buildForm();
-	}
-
-	public function testItemsOnTextControlType_ShouldThrowException(): void
-	{
-		$this->expectExceptionMessage('Items annotation cannot be set on on control type');
-		$request = new TestWithItemsOnTextRequest();
 		$request->buildForm();
 	}
 
 	public function testUnsupportedControlType(): void
 	{
-		$this->expectExceptionMessage('Control of type nonExistingType123 does not exist!');
+		$this->expectExceptionMessage('#[Control] Attribute not set on Wedo\Api\Tests\Requests\TestUnsupportedControlTypeRequest::name');
 		$request = new TestUnsupportedControlTypeRequest();
 		$request->buildForm();
 	}
@@ -178,13 +171,6 @@ class RequestTest extends TestCase
 		$request->validate();
 		$request->getForm()->onSubmit();
 		$this->assertEquals($request->name, 'Dalibor Korpar');
-	}
-
-	public function testItemsNotJsonRequest(): void
-	{
-		$this->expectExceptionMessage('Only Json is allowed for setting items on select in request!');
-		$req = new TestItemsNotJsonRequest();
-		$req->buildForm();
 	}
 
 	public function testArrayRequest(): void

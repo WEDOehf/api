@@ -6,61 +6,81 @@ use Nette\Application\UI\Form;
 use Nette\ArgumentOutOfRangeException;
 use Nette\Forms\Container;
 use Nette\Forms\Controls\BaseControl;
+use Nette\Forms\Controls\ChoiceControl;
 use Nette\NotSupportedException;
+use ReflectionProperty;
+use Throwable;
+use Wedo\Api\Attributes\ChoiceControlItems;
+use Wedo\Api\Attributes\ContainerType;
+use Wedo\Api\Attributes\Control;
 use Wedo\Api\Requests\BaseRequest;
-use Wedo\Utilities\ClassNameHelper;
 
 class FormBuilder
 {
 
 	/**
-	 * @param array<int|string, string[]> $properties
+	 * @param ReflectionProperty[] $properties
 	 * @param mixed[] $data
 	 */
 	public function createForm(array $properties, BaseRequest $request, Container $form, array $data): void
 	{
-		/**
-		 * @var string $property
-		 * @var string[][] $annotations
-		 */
-		foreach ($properties as $property => $annotations) {
-			$controlType = $this->getControlType($annotations);
+		foreach ($properties as $property) {
+			$controlType = $this->getControlType($property);
 			$controlAddCallback = [$form, 'add' . $controlType];
 
-			if ((!method_exists($form, $controlAddCallback[1]) && $controlType !== 'Date') || !is_callable($controlAddCallback)) {
-				throw new NotSupportedException('Control of type ' . $controlType . ' does not exist!');
+			try {
+				$control = $controlAddCallback($property->getName()); //@phpstan-ignore-line
+			} catch (Throwable $ex) {
+				throw new NotSupportedException('Cannot add control of type ' . $controlType, 0, $ex);
 			}
 
-			$control = call_user_func($controlAddCallback, $property);
-
-			if ($controlType === 'Container') {
+			if ($controlType === Control::CONTAINER) {
 				/** @phpstan-ignore-next-line */
 				$request->$property = [];
 
 				/** @phpstan-ignore-next-line */
-				if (empty($data[$property])) {
+				if (empty($data[$property->getName()])) {
 					continue;
 				}
 
-				$values = $data[$property];
+				$values = $data[$property->getName()];
 
-				$reqType = rtrim($annotations['var'][0], '][');
-				$reqType = ClassNameHelper::extractFqnFromObjectUseStatements($request, $reqType);
+				$requestTypeAttributes = $property->getAttributes(ContainerType::class);
+
+				if (count($requestTypeAttributes) === 0) {
+					throw new NotSupportedException('ContainerType attribute not found for ' .
+						$property->getDeclaringClass()->getName() . '::' . $property->getName());
+				}
+
+				/** @var ContainerType $requestTypeAttribute */
+				$requestTypeAttribute = $requestTypeAttributes[0]->newInstance();
+
+				$requestType = $requestTypeAttribute->value;
 
 				foreach ($values as $key => $value) {
 					/** @var Container $container */
 					$container = $control->addContainer($key);
-					$item = new $reqType();
+					$item = new $requestType();
 					$item->buildForm($value, $container, $item);
 					/** @phpstan-ignore-next-line */
-					$request->$property[] = $item;
+					$request->{$property->getName()}[] = $item;
 				}
 			}
 
-			unset($annotations['var'], $annotations['description'], $annotations['control']);
-
 			if ($control instanceof BaseControl) {
-				$request->setValidationRules($annotations, $control);
+				$request->setValidationRules($property, $control);
+			}
+
+			if ($control instanceof ChoiceControl) {
+				$itemsAttributes = $property->getAttributes(ChoiceControlItems::class);
+
+				if (count($itemsAttributes) === 0) {
+					throw new NotSupportedException('Choice control must have ChoiceControlItems attribute set!');
+				}
+
+				/** @var ChoiceControlItems $itemAttribute */
+				$itemAttribute = $itemsAttributes[0]->newInstance();
+				$control->setItems($itemAttribute->items, $itemAttribute->useKeys);
 			}
 		}
 	}
@@ -71,17 +91,20 @@ class FormBuilder
 	}
 
 	/**
-	 * @param string[][] $annotations
 	 * @throws ArgumentOutOfRangeException
-	 * @throws NotSupportedException
 	 */
-	protected function getControlType(array $annotations): string
+	protected function getControlType(ReflectionProperty $property): string
 	{
-		if (!isset($annotations['control'])) {
-			throw new ArgumentOutOfRangeException('@control annotation not set on request!');
+		$controlAttributes = $property->getAttributes(Control::class);
+		if (count($controlAttributes) === 0) {
+			throw new ArgumentOutOfRangeException('#[Control] Attribute not set on ' .
+				$property->getDeclaringClass()->getName() . '::' . $property->getName());
 		}
 
-		return $annotations['control'][0];
+		/** @var Control $controlAttribute */
+		$controlAttribute = $controlAttributes[0]->newInstance();
+
+		return $controlAttribute->value;
 	}
 
 }

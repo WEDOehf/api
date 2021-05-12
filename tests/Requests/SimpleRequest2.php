@@ -2,12 +2,13 @@
 
 namespace Wedo\Api\Tests\Requests;
 
+use Wedo\Api\Attributes\Control;
 use Wedo\Api\Requests\BaseRequest;
 
 class SimpleRequest2 extends BaseRequest
 {
 
-	/** @control Text */
+	#[Control(Control::TEXT)]
 	public string $name;
 
 }

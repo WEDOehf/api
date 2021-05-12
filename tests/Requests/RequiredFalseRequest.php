@@ -2,15 +2,15 @@
 
 namespace Wedo\Api\Tests\Requests;
 
+use Wedo\Api\Attributes\Control;
+use Wedo\Api\Attributes\RequiredRule;
 use Wedo\Api\Requests\BaseRequest;
 
 class RequiredFalseRequest extends BaseRequest
 {
 
-	/**
-	 * @setRequired(FALSE)
-	 * @control Text
-	 */
+	#[Control(Control::TEXT)]
+	#[RequiredRule(false)]
 	public string $name;
 
 }

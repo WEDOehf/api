@@ -5,15 +5,14 @@ namespace Wedo\Api\Requests;
 use Nette\ArgumentOutOfRangeException;
 use Nette\Forms\Container;
 use Nette\Forms\Controls\BaseControl;
-use Nette\Forms\Controls\ChoiceControl;
 use Nette\Forms\Form;
 use Nette\NotSupportedException;
-use Nette\Reflection\AnnotationsParser;
 use Nette\Utils\ArrayHash;
-use Nette\Utils\Strings;
 use ReflectionNamedType;
 use ReflectionObject;
 use ReflectionProperty;
+use Wedo\Api\Attributes\RequiredRule;
+use Wedo\Api\Attributes\ValidationRule;
 use Wedo\Api\Entities\ValidationError;
 use Wedo\Api\Exceptions\ValidationException;
 use Wedo\Api\Helpers\FormBuilder;
@@ -53,76 +52,31 @@ abstract class BaseRequest
 		$request ??= $this;
 		$form = $request->setForm($form);
 
-		$properties = $request->getAnnotations() ?? [];
+		$properties = $request->getReflectionProperties();
 		$this->formBuilder->createForm($properties, $request, $form, $data);
 
 		$request->setValues($data);
 	}
 
 	/**
-	 * Read annotations from public properties in current class
-	 *
-	 * @return array<int|string, string[]>|null
 	 * @internal
 	 */
-	public function getAnnotations(): ?array
+	public function setValidationRules(ReflectionProperty $property, BaseControl $control): void
 	{
-		$reflectionProperties = $this->getReflectionProperties();
-		$annotations = [];
+		$validationRulesAttributes = $property->getAttributes(ValidationRule::class);
 
-		foreach ($reflectionProperties as $rp) {
-			$annotations[$rp->name] = AnnotationsParser::getAll($rp);
+		foreach ($validationRulesAttributes as $validationRuleAttribute) {
+			/** @var ValidationRule $validationRule */
+			$validationRule = $validationRuleAttribute->newInstance();
+			$control->addRule($validationRule->validator, $validationRule->errorMessage, $validationRule->args);
 		}
 
-		return $annotations ?? null;
-	}
+		$requiredRuleAttributes = $property->getAttributes(RequiredRule::class);
 
-	/**
-	 * @internal
-	 * @param string[][] $annotations
-	 */
-	public function setValidationRules(array $annotations, BaseControl $control): void
-	{
-		foreach ($annotations as $annotation => $args) {
-			$this->setValidationRule($annotation, $control, $args);
-		}
-	}
-
-	/**
-	 * @param string[] $args
-	 */
-	public function setValidationRule(string $annotation, BaseControl $control, array $args): void
-	{
-		switch ($annotation) {
-			case 'addCustomRule':
-				$this->addCustomRule($control, $args);
-
-				return;
-			case 'addRule':
-				$this->addRule($control, $args);
-
-				return;
-			case 'setRequired':
-				$this->addRequiredRule($control, $args);
-
-				return;
-			case 'items':
-				if (!$control instanceof ChoiceControl) {
-					throw new NotSupportedException('Items annotation cannot be set on on control type "'
-						. $control::class . '" in ' . static::class);
-				}
-
-				$this->setItems($control, $args);
-
-				return;
-			default:
-				$callable = [$control->getRules(), $annotation];
-
-				if (!method_exists($control->getRules(), $annotation) || !is_callable($callable)) {
-					throw new NotSupportedException('Cannot apply rule "' . $annotation . '"!');
-				}
-
-				call_user_func_array($callable, $args);
+		if (count($requiredRuleAttributes) > 0) {
+			/** @var RequiredRule $requiredRule */
+			$requiredRule = $requiredRuleAttributes[0]->newInstance();
+			$control->setRequired($requiredRule->required);
 		}
 	}
 
@@ -308,56 +262,6 @@ abstract class BaseRequest
 		}
 
 		return $form;
-	}
-
-	/**
-	 * @param mixed[] $args
-	 */
-	private function addRule(BaseControl $control, array $args): void
-	{
-		foreach ($args as $arg) {
-			if ($arg instanceof ArrayHash) {
-				$addRuleArgs = (array) $arg;
-				array_unshift($addRuleArgs, constant(Form::class . '::' . strtoupper(array_shift($addRuleArgs))));
-			} else {
-				$addRuleArgs = [constant(Form::class . '::' . strtoupper($arg))];
-			}
-
-			call_user_func_array([$control, 'addRule'], $addRuleArgs);
-		}
-	}
-
-	/**
-	 * @param mixed[] $args
-	 */
-	private function addCustomRule(BaseControl $control, array $args): void
-	{
-		foreach ($args as $arg) {
-			$addRuleArgs = $arg instanceof ArrayHash ? (array) $arg : $arg;
-			call_user_func_array([$control, 'addRule'], $addRuleArgs);
-		}
-	}
-
-	/**
-	 * @param mixed[] $args
-	 */
-	private function addRequiredRule(BaseControl $control, array $args): void
-	{
-		call_user_func_array([$control->getRules(), 'setRequired'], $args);
-	}
-
-	/**
-	 * @param mixed[] $args
-	 * @throws NotSupportedException
-	 */
-	private function setItems(ChoiceControl $control, array $args): void
-	{
-		if (Strings::startsWith($args[0], '[') || Strings::startsWith($args[0], '{')) {
-			$items = json_decode($args[0], true);
-			$control->setItems($items);
-		} else {
-			throw new NotSupportedException('Only Json is allowed for setting items on select in request!');
-		}
 	}
 
 }
