@@ -2,16 +2,17 @@
 
 namespace Wedo\Api\Tests\Requests;
 
+use Wedo\Api\Attributes\ChoiceControlItems;
+use Wedo\Api\Attributes\Control;
+use Wedo\Api\Attributes\RequiredRule;
 use Wedo\Api\Requests\BaseRequest;
 
 class TestItemsRequest extends BaseRequest
 {
 
-	/**
-	 * @control Select
-	 * @items {"1":1, "2":2, "3":3, "4":4, "5":5}
-	 * @setRequired
-	 */
+	#[Control(Control::SELECT)]
+	#[ChoiceControlItems([1 => 1, 2, 3, 4, 5])]
+	#[RequiredRule()]
 	public int $rating;
 
 }

@@ -2,6 +2,9 @@
 
 namespace Wedo\Api\Tests\Requests;
 
+use Nette\Forms\Form;
+use Wedo\Api\Attributes\Control;
+use Wedo\Api\Attributes\ValidationRule;
 use Wedo\Api\Requests\BaseRequest;
 
 class TestRequest extends BaseRequest
@@ -9,50 +12,43 @@ class TestRequest extends BaseRequest
 
 	/**
 	 * Customer name
-	 *
-	 * @control Text
-	 * @addRule(max_length, NULL, 20)
-	 * @setRequired
 	 */
+	#[Control(Control::TEXT)]
+	#[ValidationRule(Form::MAX_LENGTH, null, 20)]
+	#[ValidationRule(Form::REQUIRED)]
 	public string $name;
 
 	/**
 	 * Customers E-mail
-	 *
-	 * @control Email
-	 * @addRule(min_length, NULL, 5)
 	 */
+	#[Control(Control::EMAIL)]
+	#[ValidationRule(Form::MIN_LENGTH, null, 5)]
 	public string $email;
 
 	/**
 	 * Customers phone
-	 *
-	 * @addCustomRule('Wedo\Api\Tests\Requests\CustomValidator::validate', 'phone not valid')
-	 * @control Text
 	 */
+	#[Control(Control::TEXT)]
+	#[ValidationRule([CustomValidator::class, 'validate'])]
 	public string $phone;
 
 	/**
 	 * Customers birthYear
-	 *
-	 * @control Text
-	 * @addRule(numeric)
 	 */
+	#[Control(Control::TEXT)]
+	#[ValidationRule(Form::NUMERIC)]
 	public ?int $birth_year;
 
 	/**
-	 * Customers birthYear
-	 *
-	 * @control Text
-	 * @isRequired()
+	 * Amount
 	 */
+	#[Control(Control::TEXT)]
 	public float $amount;
 
 	/**
 	 * Accept tos
-	 *
-	 * @control CheckBox
 	 */
+	#[Control(Control::CHECKBOX)]
 	public bool $accept_tos;
 
 }

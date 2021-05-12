@@ -2,6 +2,7 @@
 
 namespace Wedo\Api\Tests\Requests;
 
+use Wedo\Api\Attributes\Control;
 use Wedo\Api\Requests\BaseRequest;
 
 //phpcs:disable
@@ -10,8 +11,8 @@ class TestNotBuiltInTypeRequest extends BaseRequest
 
 	/**
 	 * typehint not set here and this should throw an exception
-	 * @control Text
 	 */
+	#[Control(Control::TEXT)]
 	public \stdClass $name;
 
 }

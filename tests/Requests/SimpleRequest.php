@@ -2,15 +2,15 @@
 
 namespace Wedo\Api\Tests\Requests;
 
+use Wedo\Api\Attributes\Control;
+use Wedo\Api\Attributes\RequiredRule;
 use Wedo\Api\Requests\BaseRequest;
 
 class SimpleRequest extends BaseRequest
 {
 
-	/**
-	 * @setRequired
-	 * @control Text
-	 */
+	#[Control(Control::TEXT)]
+	#[RequiredRule()]
 	public string $name;
 
 }

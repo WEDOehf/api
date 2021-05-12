@@ -2,15 +2,15 @@
 
 namespace Wedo\Api\Tests\Requests;
 
+use Wedo\Api\Attributes\Control;
+use Wedo\Api\Attributes\ValidationRule;
 use Wedo\Api\Requests\BaseRequest;
 
 class TestNonExistingRuleRequest extends BaseRequest
 {
 
-	/**
-	 * @control Text
-	 * @addBlaSomething()
-	 */
+	#[Control(Control::TEXT)]
+	#[ValidationRule('BlaSomething')]
 	public string $name;
 
 }
