@@ -74,13 +74,11 @@ class FormBuilder
 			if ($control instanceof ChoiceControl) {
 				$itemsAttributes = $property->getAttributes(ChoiceControlItems::class);
 
-				if (count($itemsAttributes) === 0) {
-					throw new NotSupportedException('Choice control must have ChoiceControlItems attribute set!');
+				if (count($itemsAttributes) > 0) {
+					/** @var ChoiceControlItems $itemAttribute */
+					$itemAttribute = $itemsAttributes[0]->newInstance();
+					$control->setItems($itemAttribute->items, $itemAttribute->useKeys);
 				}
-
-				/** @var ChoiceControlItems $itemAttribute */
-				$itemAttribute = $itemsAttributes[0]->newInstance();
-				$control->setItems($itemAttribute->items, $itemAttribute->useKeys);
 			}
 		}
 	}
