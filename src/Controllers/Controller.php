@@ -3,10 +3,12 @@
 namespace Wedo\Api\Controllers;
 
 use Nette\Application\AbortException;
+use Nette\Application\IPresenter;
 use Nette\Application\Request;
 use Nette\Application\Response;
 use Nette\Application\Responses\JsonResponse;
-use Nette\Application\UI\Presenter;
+use Nette\Http\IRequest;
+use Nette\Http\IResponse;
 use Nette\Localization\Translator;
 use Nette\Utils\Json;
 use Nette\Utils\Strings;
@@ -32,7 +34,7 @@ use Wedo\Utilities\Json\JsonTranslatableMessage;
 /**
  * @codeCoverageIgnore To hard to test ATM and this class is not likely to change
  */
-class Controller extends Presenter
+class Controller implements IPresenter
 {
 
 	public mixed $payload = [];
@@ -43,13 +45,18 @@ class Controller extends Presenter
 
 	protected Translator $translator;
 
+	private IRequest $httpRequest;
+
+	private IResponse $httpResponse;
+
+	private IResponse $response;
+
 	/**
 	 * @return JsonResponse
 	 */
 	public function run(Request $request): Response
 	{
 		$this->request = $request;
-		$this->setParent($this->getParent(), $request->getPresenterName());
 		if ($this->getHttpRequest()->getHeader('origin') !== null) {
 			$this->getHttpResponse()->addHeader('Access-Control-Allow-Origin', $this->getHttpRequest()->getHeader('origin'));
 		}
@@ -77,6 +84,41 @@ class Controller extends Presenter
 	{
 		$translator = clone $translator;
 		$this->translator = $translator;
+	}
+
+	final public function getHttpRequest(): IRequest
+	{
+		return $this->httpRequest;
+	}
+
+	final public function getHttpResponse(): IResponse
+	{
+		return $this->httpResponse;
+	}
+
+	final public function injectRequestAndResponse(
+		IRequest $httpRequest,
+		IResponse $httpResponse
+	): void
+	{
+		$this->httpRequest = $httpRequest;
+		$this->httpResponse = $httpResponse;
+	}
+
+	public function sendJson(mixed $item): void
+	{
+		$this->payload = $item;
+		$this->terminate();
+	}
+
+	/**
+	 * Correctly terminates controller.
+	 *
+	 * @throws AbortException
+	 */
+	public function terminate(): void
+	{
+		throw new AbortException();
 	}
 
 	/**
