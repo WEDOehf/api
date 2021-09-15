@@ -209,7 +209,9 @@ class Controller implements IPresenter
 
 			return null;
 		} catch (ResponseException $responseException) {
-			$this->getHttpResponse()->setCode($responseException->getCode());
+			if ($responseException->getCode() >= 100 && $responseException->getCode() < 600) {
+				$this->getHttpResponse()->setCode($responseException->getCode());
+			}
 
 			$result = $responseException instanceof ValidationException
 				? new ValidationErrorResponse($responseException)
