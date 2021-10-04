@@ -83,7 +83,8 @@ class ApiRoute implements Router
 			return [$this->apiEndPoints[$url], end($urlParts), $paramsPart];
 		}
 
-		$paramsPart[] = end($urlParts);
+		array_unshift($paramsPart, end($urlParts));
+
 		array_pop($urlParts);
 
 		if (count($urlParts) < 2) {
