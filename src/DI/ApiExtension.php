@@ -28,8 +28,9 @@ class ApiExtension extends CompilerExtension
 	public function loadConfiguration(): void
 	{
 		$builder = $this->getContainerBuilder();
-		$builder->addDefinition($this->prefix('routerFactory'))
-			->setFactory(RouterFactory::class);
+		/** @var ServiceDefinition $routerFactory */
+		$routerFactory = $builder->addDefinition($this->prefix('routerFactory')); //@phpstan-ignore-line
+		$routerFactory->setFactory(RouterFactory::class);
 	}
 
 	public function beforeCompile(): void
