@@ -94,6 +94,7 @@ class FormBuilder
 	protected function getControlType(ReflectionProperty $property): string
 	{
 		$controlAttributes = $property->getAttributes(Control::class);
+
 		if (count($controlAttributes) === 0) {
 			throw new ArgumentOutOfRangeException('#[Control] Attribute not set on ' .
 				$property->getDeclaringClass()->getName() . '::' . $property->getName());

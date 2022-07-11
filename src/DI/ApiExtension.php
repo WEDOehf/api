@@ -29,7 +29,7 @@ class ApiExtension extends CompilerExtension
 	{
 		$builder = $this->getContainerBuilder();
 		/** @var ServiceDefinition $routerFactory */
-		$routerFactory = $builder->addDefinition($this->prefix('routerFactory')); //@phpstan-ignore-line
+		$routerFactory = $builder->addDefinition($this->prefix('routerFactory'));
 		$routerFactory->setFactory(RouterFactory::class);
 	}
 
