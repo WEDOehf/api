@@ -57,6 +57,7 @@ class Controller implements IPresenter
 	public function run(Request $request): Response
 	{
 		$this->request = $request;
+
 		if ($this->getHttpRequest()->getHeader('origin') !== null) {
 			$this->getHttpResponse()->addHeader('Access-Control-Allow-Origin', $this->getHttpRequest()->getHeader('origin'));
 		}
@@ -244,7 +245,7 @@ class Controller implements IPresenter
 	private function setTranslatorOnJsonTranslatable(mixed $data): void
 	{
 		if (is_array($data)) {
-			foreach ($data as $key => $value) {
+			foreach ($data as $value) {
 				if ($value instanceof JsonTranslatableMessage) {
 					$value->setTranslator($this->translator);
 				}
@@ -295,6 +296,7 @@ class Controller implements IPresenter
 		}
 
 		$paramClassName = $paramClass->getName();
+
 		if (class_exists($paramClassName) && (new ReflectionClass($paramClassName))->isSubclassOf(BaseRequest::class)) {
 			return 'POST';
 		}
