@@ -36,7 +36,7 @@ class FormBuilder
 
 			if ($controlType === Control::CONTAINER) {
 				/** @phpstan-ignore-next-line */
-				$request->$property = [];
+				$request->{$property->getName()} = [];
 
 				/** @phpstan-ignore-next-line */
 				if (empty($data[$property->getName()])) {
