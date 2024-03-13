@@ -2,9 +2,9 @@
 
 namespace Wedo\Api\Routing;
 
-use Nette;
 use Nette\Application\Routers\Route;
 use Nette\Http\IRequest;
+use Nette\Http\UrlScript;
 use Nette\Routing\Router;
 use Nette\Utils\Strings;
 
@@ -66,14 +66,14 @@ class ApiRoute implements Router
 	 *
 	 * @param mixed[] $appRequest
 	 */
-	public function constructUrl(array $appRequest, Nette\Http\UrlScript $refUrl): ?string
+	public function constructUrl(array $appRequest, UrlScript $refUrl): ?string
 	{
 		return null;
 	}
 
 	/**
 	 * @param mixed[] $paramsPart
-	 * @return  array<int, array|string|false> [$presenter, $action, mixed]
+	 * @return array<int, array<mixed>|string|false>|null [$presenter, $action, mixed]
 	 */
 	private function getPresenterAndAction(string $url, array $paramsPart = []): ?array
 	{

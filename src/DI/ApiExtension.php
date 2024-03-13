@@ -18,6 +18,7 @@ class ApiExtension extends CompilerExtension
 {
 
 	/** @var ApiExtensionConfig */
+	// @phpstan-ignore-next-line
 	protected $config; //phpcs:ignore
 
 	public function __construct()

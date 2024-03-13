@@ -49,7 +49,24 @@ class Controller implements IPresenter
 
 	private IResponse $httpResponse;
 
-	private IResponse $response;
+	final public function getHttpRequest(): IRequest
+	{
+		return $this->httpRequest;
+	}
+
+	final public function getHttpResponse(): IResponse
+	{
+		return $this->httpResponse;
+	}
+
+	final public function injectRequestAndResponse(
+		IRequest $httpRequest,
+		IResponse $httpResponse
+	): void
+	{
+		$this->httpRequest = $httpRequest;
+		$this->httpResponse = $httpResponse;
+	}
 
 	/**
 	 * @return JsonResponse
@@ -76,7 +93,7 @@ class Controller implements IPresenter
 
 		$result ??= $this->payload;
 
-		$this->setTranslatorOnJsonTranslatable($result);
+		$this->setTranslatorOnJsonTranslatable($result); //@phpstan-ignore-line
 
 		return new JsonResponse($result ?? $this->payload);
 	}
@@ -85,25 +102,6 @@ class Controller implements IPresenter
 	{
 		$translator = clone $translator;
 		$this->translator = $translator;
-	}
-
-	final public function getHttpRequest(): IRequest
-	{
-		return $this->httpRequest;
-	}
-
-	final public function getHttpResponse(): IResponse
-	{
-		return $this->httpResponse;
-	}
-
-	final public function injectRequestAndResponse(
-		IRequest $httpRequest,
-		IResponse $httpResponse
-	): void
-	{
-		$this->httpRequest = $httpRequest;
-		$this->httpResponse = $httpResponse;
 	}
 
 	public function sendJson(mixed $item): void
@@ -185,14 +183,14 @@ class Controller implements IPresenter
 
 				$params[$key] = $reflectionClass->newInstance();
 				$inputData = Json::decode($post, Json::FORCE_ARRAY);
-				$params[$key]->buildForm($inputData);
+				$params[$key]->buildForm($inputData); //@phpstan-ignore-line
 				$params[$key]->validate();
 
 				break;
 			}
 
 			if ($reflectionClass->getName() === JsonDateTime::class) {
-				$params[$key] = new JsonDateTime($this->getHttpRequest()->getQuery($key));
+				$params[$key] = new JsonDateTime($this->getHttpRequest()->getQuery($key)); //@phpstan-ignore-line
 			}
 		}
 
