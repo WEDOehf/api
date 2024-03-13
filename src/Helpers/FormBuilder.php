@@ -43,6 +43,7 @@ class FormBuilder
 					continue;
 				}
 
+				/** @var Container[] $values */
 				$values = $data[$property->getName()];
 
 				$requestTypeAttributes = $property->getAttributes(ContainerType::class);
@@ -61,7 +62,7 @@ class FormBuilder
 					/** @var Container $container */
 					$container = $control->addContainer($key);
 					$item = new $requestType();
-					$item->buildForm($value, $container, $item);
+					$item->buildForm($value, $container, $item); // @phpstan-ignore-line
 					/** @phpstan-ignore-next-line */
 					$request->{$property->getName()}[] = $item;
 				}

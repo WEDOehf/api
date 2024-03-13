@@ -3,13 +3,13 @@
 namespace Wedo\Api\Exceptions;
 
 use Exception;
-use Nette\Localization\ITranslator;
+use Nette\Localization\Translator;
 use Throwable;
 
 class ResponseException extends Exception
 {
 
-	/** @var string[] */
+	/** @var mixed[] */
 	protected array $parameters;
 
 	/** @var ResponseException[] */
@@ -22,7 +22,7 @@ class ResponseException extends Exception
 		parent::__construct($message, $code, $previous);
 	}
 
-	public function getTranslatedMessage(ITranslator $translator): string
+	public function getTranslatedMessage(Translator $translator): string
 	{
 		return $translator->translate($this->getMessage(), $this->parameters);
 	}
@@ -50,7 +50,7 @@ class ResponseException extends Exception
 	}
 
 	/**
-	 * @return string[]
+	 * @return mixed[]
 	 */
 	public function getParameters(): array
 	{

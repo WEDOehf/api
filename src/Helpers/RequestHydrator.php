@@ -22,18 +22,22 @@ class RequestHydrator
 	{
 		switch ($type) {
 			case 'int':
-				return (int) $value;
+				return (int) (is_numeric($value) ? $value : 0);
 			case 'float':
-				return (float) $value;
+				return (float) (is_numeric($value) ? $value : 0);
 			case 'bool':
 				return (bool) $value;
 			case 'DateTimeInterface':
-				if ((trim($value ?? '') === '') && $allowsNull) {
+				if ($value === null || (is_string($value) && trim($value) === '') && $allowsNull) {
 					return null;
 				}
 
-				return new DateTimeImmutable($value);
+				return new DateTimeImmutable($value); //@phpstan-ignore-line
 			default:
+				if (!is_scalar($value)) {
+					return null;
+				}
+
 				return (string) $value;
 		}
 	}
