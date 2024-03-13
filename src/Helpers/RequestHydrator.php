@@ -28,7 +28,7 @@ class RequestHydrator
 			case 'bool':
 				return (bool) $value;
 			case 'DateTimeInterface':
-				if ($value === '' && $allowsNull) {
+				if ((trim($value ?? '') === '') && $allowsNull) {
 					return null;
 				}
 
