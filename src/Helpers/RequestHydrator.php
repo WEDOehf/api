@@ -34,11 +34,7 @@ class RequestHydrator
 
 				return new DateTimeImmutable($value); //@phpstan-ignore-line
 			default:
-				if (!is_scalar($value)) {
-					return null;
-				}
-
-				return (string) $value;
+				return (string) $value; //@phpstan-ignore-line
 		}
 	}
 
